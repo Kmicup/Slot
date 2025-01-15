@@ -142,7 +142,7 @@
     document.getElementById('changeModeButton').onclick = () => {
       currentSlotMode = (currentSlotMode + 1) % 2;
       updateSlotItem();
-      document.getElementById('modeDisplay').textContent = `現在のモード: ${currentSlotMode === 0 ? 'ご褒美モード' : 'ペナルティモード'}`;
+      document.getElementById('modeDisplay').textContent = `現在のモード: ${currentSlotMode === 0 ? '投げテーの祝福' : '避けテーの審判'}`;
     };
 
     document.getElementById('requestPermission').onclick = async () => {
