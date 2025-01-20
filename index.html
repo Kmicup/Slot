@@ -42,6 +42,20 @@
       display: none;
       text-align: center;
     }
+    /* 特定のボタンにスタイルを適用 */
+  #stopMeasurement {
+    font-size: 1.5em; /* フォントサイズを大きく */
+    padding: 12px 24px; /* ボタンの内側の余白を広げる */
+    width: 80%; /* ボタンの幅を画面に合わせて大きく */
+    max-width: 300px; /* 最大幅を設定 */
+    text-align: center; /* テキストを中央揃え */
+  }
+
+  /* ホバー時のエフェクトも他と同様 */
+  #stopMeasurement:hover {
+    background: linear-gradient(45deg, #ffcc00, #00aaff);
+    transform: scale(1.1);
+  }
     #countdown {
       font-size: 2em;
       color: yellow;
