@@ -49,16 +49,21 @@
     #accelerationDisplay {
       display: none;
     }
-    h1 {
-      font-size: 2em;
-      margin: 10px;
+    h1 img {
+      max-width: 80%;
+      height: auto;
     }
   </style>
 </head>
 <body>
+  <!-- ロゴ -->
+  <h1>
+    <img src="bellight ロゴ.png" alt="Bellight ロゴ">
+  </h1>
+
   <!-- スロットモード -->
   <div id="slotMode">
-    <h1>スロットモード</h1>
+    <h2>スロットモード</h2>
     <button id="spinButton">ルーレットスタート</button>
     <p id="modeDisplay">現在のモード: 投げテーの祝福</p>
     <button id="changeModeButton">モード変更</button>
@@ -67,7 +72,7 @@
 
   <!-- 加速度センサーモード -->
   <div id="accelerationDisplay">
-    <h1>加速度センサーモード</h1>
+    <h2>加速度センサーモード</h2>
     <p id="stopMessage">画面タップでセンサ停止</p>
     <button id="requestPermission">加速度センサースタート</button>
     <button id="backToSlot">スロットモードに戻る</button>
