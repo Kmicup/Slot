@@ -145,42 +145,52 @@
     }
 
     function startMeasurement() {
-      if (isMeasuring) return;
-      isMeasuring = true;
-      window.addEventListener('devicemotion', updateAcceleration);
+  if (isMeasuring) return; // 重複して測定を開始しない
+  isMeasuring = true;
+  window.addEventListener('devicemotion', updateAcceleration);
 
-      intervalId = setInterval(() => {
-        const { x, y, z } = lastAcceleration;
-        const totalAccel = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+  // 加速度を定期的にチェック
+  intervalId = setInterval(() => {
+    const { x, y, z } = lastAcceleration;
+    const totalAccel = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
 
-        if (totalAccel < 1.0 && audio.paused) {
-          audio.play();
-        } else {
-          audio.pause();
-        }
-      }, 200);
-
-      document.getElementById('stopMeasurement').style.display = 'inline-block';
-      document.getElementById('requestPermission').style.display = 'none';
+    // 音が途切れないように再生状態をチェック
+    if (totalAccel < 1.0) {
+      if (audio.paused) {
+        audio.loop = true; // 音をループ再生
+        audio.play();
+      }
+    } else {
+      if (!audio.paused) {
+        audio.pause();
+        audio.currentTime = 0; // 再生位置をリセット
+      }
     }
+  }, 200);
 
-    function stopMeasurement() {
-      clearInterval(intervalId);
-      window.removeEventListener('devicemotion', updateAcceleration);
-      audio.pause();
-      isMeasuring = false;
+  document.getElementById('stopMeasurement').style.display = 'inline-block';
+  document.getElementById('requestPermission').style.display = 'none';
+}
 
-      document.getElementById('stopMeasurement').style.display = 'none';
-      document.getElementById('requestPermission').style.display = 'inline-block';
-    }
+function stopMeasurement() {
+  clearInterval(intervalId);
+  window.removeEventListener('devicemotion', updateAcceleration);
+  audio.pause();
+  audio.currentTime = 0; // 再生位置をリセット
+  isMeasuring = false;
 
-    function updateAcceleration(event) {
-      lastAcceleration = {
-        x: event.acceleration.x || 0,
-        y: event.acceleration.y || 0,
-        z: event.acceleration.z || 0
-      };
-    }
+  document.getElementById('stopMeasurement').style.display = 'none';
+  document.getElementById('requestPermission').style.display = 'inline-block';
+}
+
+function updateAcceleration(event) {
+  lastAcceleration = {
+    x: event.acceleration.x || 0,
+    y: event.acceleration.y || 0,
+    z: event.acceleration.z || 0,
+  };
+}
+
   </script>
 </body>
 </html>
