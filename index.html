@@ -80,7 +80,13 @@
   </div>
 
   <script>
-    let currentMode = 'slot'; // モードを管理
+    let currentMode = 'slot'; // 現在のモードを管理
+    let currentSlotMode = 0; // ルーレットモード (0: 投げテーの祝福, 1: 避けテーの審判)
+    let isMeasuring = false;
+    let lastAcceleration = { x: 0, y: 0, z: 0 };
+    let audio = new Audio('alert-sound.mp3');
+    let intervalId;
+
     document.getElementById('toggleMode').addEventListener('click', () => {
       if (currentMode === 'slot') {
         currentMode = 'accelerometer';
@@ -92,6 +98,97 @@
         document.getElementById('accelerationDisplay').style.display = 'none';
       }
     });
+
+    document.getElementById('spinButton').addEventListener('click', startSlotSpin);
+    document.getElementById('changeModeButton').addEventListener('click', () => {
+      currentSlotMode = (currentSlotMode + 1) % 2;
+      document.getElementById('modeDisplay').textContent =
+        `現在のモード: ${currentSlotMode === 0 ? '投げテーの祝福' : '避けテーの審判'}`;
+    });
+
+    document.getElementById('requestPermission').addEventListener('click', async () => {
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        const permission = await DeviceMotionEvent.requestPermission();
+        if (permission === 'granted') {
+          startCountdown();
+        } else {
+          alert('加速度センサーのアクセスが許可されていません。');
+        }
+      } else {
+        startCountdown();
+      }
+    });
+
+    document.getElementById('stopMeasurement').addEventListener('click', stopMeasurement);
+
+    function startSlotSpin() {
+      let spinDuration = 3000; // 3秒間ルーレットを回す
+      let spinInterval = setInterval(() => {
+        const items = currentSlotMode === 0
+          ? ["大きいボール", "中ボール2個", "避けテー鐘を鳴らす", "ペナルティ選択", "投げる回数+1"]
+          : ["禁止マス", "全員ケンケン", "避けテー範囲拡大", "避けテー範囲縮小", "避けテー一人行動不能"];
+        let index = Math.floor(Math.random() * items.length);
+        document.getElementById('modeDisplay').textContent = items[index];
+      }, 100);
+
+      setTimeout(() => clearInterval(spinInterval), spinDuration);
+    }
+
+    function startCountdown() {
+      const countdownElement = document.getElementById('countdown');
+      let countdown = 3;
+      countdownElement.textContent = countdown;
+      countdownElement.style.display = 'block';
+
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          countdownElement.textContent = countdown;
+        } else {
+          clearInterval(countdownInterval);
+          countdownElement.style.display = 'none';
+          startMeasurement();
+        }
+      }, 1000);
+    }
+
+    function startMeasurement() {
+      if (isMeasuring) return;
+      isMeasuring = true;
+      window.addEventListener('devicemotion', updateAcceleration);
+
+      intervalId = setInterval(() => {
+        const { x, y, z } = lastAcceleration;
+        const totalAccel = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+
+        if (totalAccel < 1.0 && audio.paused) {
+          audio.play();
+        } else {
+          audio.pause();
+        }
+      }, 200);
+
+      document.getElementById('stopMeasurement').style.display = 'inline-block';
+      document.getElementById('requestPermission').style.display = 'none';
+    }
+
+    function stopMeasurement() {
+      clearInterval(intervalId);
+      window.removeEventListener('devicemotion', updateAcceleration);
+      audio.pause();
+      isMeasuring = false;
+
+      document.getElementById('stopMeasurement').style.display = 'none';
+      document.getElementById('requestPermission').style.display = 'inline-block';
+    }
+
+    function updateAcceleration(event) {
+      lastAcceleration = {
+        x: event.acceleration.x || 0,
+        y: event.acceleration.y || 0,
+        z: event.acceleration.z || 0
+      };
+    }
   </script>
 </body>
 </html>
