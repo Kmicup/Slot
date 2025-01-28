@@ -66,7 +66,7 @@
 
   <!-- スロットモード -->
   <div id="slotMode">
-    <h2>スロットモード</h2>
+    <h2>ルーレットモード</h2>
     <button id="spinButton">ルーレットスタート</button>
     <p id="modeDisplay">現在のモード: 投げテーの祝福</p>
     <button id="changeModeButton">モード変更</button>
@@ -79,7 +79,7 @@
     <p id="stopMessage">画面タップでセンサ停止</p>
     <p id="countdown">3</p>
     <button id="requestPermission">加速度センサースタート</button>
-    <button id="backToSlot">スロットモードに戻る</button>
+    <button id="backToSlot">ルーレットモードに戻る</button>
   </div>
 
   <script>
@@ -107,7 +107,7 @@
       let spinDuration = 3000; // 3秒間ルーレットを回す
       let spinInterval = setInterval(() => {
         const items = currentSlotMode === 0
-          ? ["大きいボール", "中ボール2個", "避けテー鐘を鳴らす", "ペナルティ選択", "投げる回数+1"]
+          ? ["大きいボール", "中ボール2個", "避けテー鈴を鳴らす", "ペナルティ選択", "投げる回数+1"]
           : ["禁止マス", "全員ケンケン", "避けテー範囲拡大", "避けテー範囲縮小", "避けテー一人行動不能"];
         let index = Math.floor(Math.random() * items.length);
         document.getElementById('modeDisplay').textContent = `結果: ${items[index]}`;
@@ -174,7 +174,7 @@
         const { x, y, z } = lastAcceleration;
         const totalAccel = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
 
-        if (totalAccel < 1.0) {
+        if (totalAccel < 1.5) {
           if (audio.paused) {
             audio.loop = true;
             audio.play();
