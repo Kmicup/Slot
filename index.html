@@ -43,57 +43,73 @@
       background: #ffe680;
       transform: scale(1.05);
     }
-    #modeDisplay {
-      font-size: 1.2em;
-      margin-top: 10px;
+    #slotMode {
+      display: block;
+    }
+    #accelerationDisplay {
+      display: none;
+    }
+    h1 {
+      font-size: 2em;
+      margin: 10px;
     }
   </style>
 </head>
 <body>
-  <!-- ロゴ画像 -->
-  <h1>
-    <img src="bellight ロゴ.png" alt="Bellight ロゴ" style="max-width: 80%; height: auto;" />
-  </h1>
-
-  <!-- ルーレットモード -->
+  <!-- スロットモード -->
   <div id="slotMode">
+    <h1>スロットモード</h1>
     <button id="spinButton">ルーレットスタート</button>
     <p id="modeDisplay">現在のモード: 投げテーの祝福</p>
     <button id="changeModeButton">モード変更</button>
-    <button id="toggleMode">加速度センサに切り替え</button>
+    <button id="toggleMode">加速度センサーモードに切り替え</button>
   </div>
 
   <!-- 加速度センサーモード -->
-  <div id="accelerationDisplay" style="display: none;">
+  <div id="accelerationDisplay">
+    <h1>加速度センサーモード</h1>
     <p id="stopMessage">画面タップでセンサ停止</p>
     <button id="requestPermission">加速度センサースタート</button>
+    <button id="backToSlot">スロットモードに戻る</button>
   </div>
 
   <script>
-    let currentMode = 'slot'; // 現在のモードを管理
-    let currentSlotMode = 0; // ルーレットモード (0: 投げテーの祝福, 1: 避けテーの審判)
     let isMeasuring = false;
     let lastAcceleration = { x: 0, y: 0, z: 0 };
     let audio = new Audio('alert-sound.mp3');
     let intervalId;
+    let currentSlotMode = 0; // スロットモードの種類（0: 投げテーの祝福, 1: 避けテーの審判）
 
-    // モード切り替え
+    // スロットモードから加速度センサーモードに切り替え
     document.getElementById('toggleMode').addEventListener('click', () => {
-      if (currentMode === 'slot') {
-        currentMode = 'accelerometer';
-        document.getElementById('slotMode').style.display = 'none';
-        document.getElementById('accelerationDisplay').style.display = 'block';
-      } else {
-        currentMode = 'slot';
-        document.getElementById('slotMode').style.display = 'block';
-        document.getElementById('accelerationDisplay').style.display = 'none';
-      }
+      document.getElementById('slotMode').style.display = 'none';
+      document.getElementById('accelerationDisplay').style.display = 'block';
     });
 
-    // ルーレットスタート
-    document.getElementById('spinButton').addEventListener('click', startSlotSpin);
+    // 加速度センサーモードからスロットモードに戻る
+    document.getElementById('backToSlot').addEventListener('click', () => {
+      stopMeasurement(); // 計測中なら停止
+      document.getElementById('accelerationDisplay').style.display = 'none';
+      document.getElementById('slotMode').style.display = 'block';
+    });
+
+    // スロットモード: ルーレットスタート
+    document.getElementById('spinButton').addEventListener('click', () => {
+      let spinDuration = 3000; // 3秒間ルーレットを回す
+      let spinInterval = setInterval(() => {
+        const items = currentSlotMode === 0
+          ? ["大きいボール", "中ボール2個", "避けテー鐘を鳴らす", "ペナルティ選択", "投げる回数+1"]
+          : ["禁止マス", "全員ケンケン", "避けテー範囲拡大", "避けテー範囲縮小", "避けテー一人行動不能"];
+        let index = Math.floor(Math.random() * items.length);
+        document.getElementById('modeDisplay').textContent = `結果: ${items[index]}`;
+      }, 100);
+
+      setTimeout(() => clearInterval(spinInterval), spinDuration);
+    });
+
+    // スロットモード: モード変更
     document.getElementById('changeModeButton').addEventListener('click', () => {
-      currentSlotMode = (currentSlotMode + 1) % 2;
+      currentSlotMode = (currentSlotMode + 1) % 2; // 0と1を切り替え
       document.getElementById('modeDisplay').textContent =
         `現在のモード: ${currentSlotMode === 0 ? '投げテーの祝福' : '避けテーの審判'}`;
     });
@@ -101,37 +117,32 @@
     // 加速度センサー計測開始
     document.getElementById('requestPermission').addEventListener('click', async () => {
       if (typeof DeviceMotionEvent.requestPermission === 'function') {
-        const permission = await DeviceMotionEvent.requestPermission();
-        if (permission === 'granted') {
-          startMeasurement();
-        } else {
-          alert('加速度センサーのアクセスが許可されていません。');
+        try {
+          const permission = await DeviceMotionEvent.requestPermission();
+          if (permission === 'granted') {
+            startMeasurement();
+          } else {
+            alert('加速度センサーのアクセスが拒否されました。');
+          }
+        } catch (error) {
+          console.error('センサーの許可リクエスト中にエラーが発生しました:', error);
         }
       } else {
-        startMeasurement();
+        startMeasurement(); // 権限リクエスト不要な場合
       }
     });
-
-    function startSlotSpin() {
-      let spinDuration = 3000; // 3秒間ルーレットを回す
-      let spinInterval = setInterval(() => {
-        const items = currentSlotMode === 0
-          ? ["大きいボール", "中ボール2個", "避けテー鐘を鳴らす", "ペナルティ選択", "投げる回数+1"]
-          : ["禁止マス", "全員ケンケン", "避けテー範囲拡大", "避けテー範囲縮小", "避けテー一人行動不能"];
-        let index = Math.floor(Math.random() * items.length);
-        document.getElementById('modeDisplay').textContent = items[index];
-      }, 100);
-
-      setTimeout(() => clearInterval(spinInterval), spinDuration);
-    }
 
     function startMeasurement() {
       if (isMeasuring) return; // 重複防止
       isMeasuring = true;
 
+      // 加速度センサーのイベントを登録
       window.addEventListener("devicemotion", updateAcceleration);
+
+      // タップで停止できるようにイベントを登録
       document.body.addEventListener("click", stopMeasurement);
 
+      // 加速度センサーのデータを定期的にチェック
       intervalId = setInterval(() => {
         const { x, y, z } = lastAcceleration;
         const totalAccel = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
@@ -154,9 +165,10 @@
     }
 
     function stopMeasurement() {
+      if (!isMeasuring) return; // 計測していない場合は無視
       clearInterval(intervalId);
       window.removeEventListener("devicemotion", updateAcceleration);
-      document.body.removeEventListener("click", stopMeasurement);
+      document.body.removeEventListener("click", stopMeasurement); // タップイベントを解除
       audio.pause();
       audio.currentTime = 0;
       isMeasuring = false;
