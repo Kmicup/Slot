@@ -18,15 +18,9 @@
       text-align: center;
       position: relative;
     }
-    #stopMessage {
-      font-size: 1.5em;
-      color: #ffcc00;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      display: none;
+    h1 img {
+      max-width: 80%;
+      height: auto;
     }
     button {
       font-size: 1.2em;
@@ -43,15 +37,24 @@
       background: #ffe680;
       transform: scale(1.05);
     }
+    #slotMode, #accelerationDisplay {
+      display: none;
+    }
     #slotMode {
       display: block;
     }
-    #accelerationDisplay {
+    #stopMessage {
+      font-size: 1.5em;
+      color: #ffcc00;
+      text-align: center;
+      margin-top: 20px;
       display: none;
     }
-    h1 img {
-      max-width: 80%;
-      height: auto;
+    #countdown {
+      font-size: 2em;
+      color: yellow;
+      margin-top: 20px;
+      display: none;
     }
   </style>
 </head>
@@ -74,6 +77,7 @@
   <div id="accelerationDisplay">
     <h2>加速度センサーモード</h2>
     <p id="stopMessage">画面タップでセンサ停止</p>
+    <p id="countdown">3</p>
     <button id="requestPermission">加速度センサースタート</button>
     <button id="backToSlot">スロットモードに戻る</button>
   </div>
@@ -125,7 +129,7 @@
         try {
           const permission = await DeviceMotionEvent.requestPermission();
           if (permission === 'granted') {
-            startMeasurement();
+            startCountdown();
           } else {
             alert('加速度センサーのアクセスが拒否されました。');
           }
@@ -133,9 +137,27 @@
           console.error('センサーの許可リクエスト中にエラーが発生しました:', error);
         }
       } else {
-        startMeasurement(); // 権限リクエスト不要な場合
+        startCountdown(); // 権限リクエスト不要な場合
       }
     });
+
+    function startCountdown() {
+      const countdownElement = document.getElementById('countdown');
+      let countdown = 3; // 3秒のカウントダウン
+      countdownElement.textContent = countdown;
+      countdownElement.style.display = 'block';
+
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          countdownElement.textContent = countdown;
+        } else {
+          clearInterval(countdownInterval);
+          countdownElement.style.display = 'none';
+          startMeasurement(); // 計測開始
+        }
+      }, 1000);
+    }
 
     function startMeasurement() {
       if (isMeasuring) return; // 重複防止
