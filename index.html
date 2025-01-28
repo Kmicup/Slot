@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bellight</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
   <style>
     body {
       display: flex;
@@ -17,6 +16,17 @@
       background-color: #2b2b2b;
       color: #ffffff;
       text-align: center;
+      position: relative;
+    }
+    #stopMessage {
+      font-size: 1.5em;
+      color: #ffcc00;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: none;
     }
     button {
       font-size: 1.2em;
@@ -37,19 +47,10 @@
       font-size: 1.2em;
       margin-top: 10px;
     }
-    #countdown {
-      font-size: 3em;
-      margin-top: 20px;
-      color: #ffcc00;
-      display: none;
-    }
-    #accelerationDisplay {
-      display: none;
-    }
   </style>
 </head>
 <body>
-  <!-- ロゴ画像をタイトルとして表示 -->
+  <!-- ロゴ画像 -->
   <h1>
     <img src="bellight ロゴ.png" alt="Bellight ロゴ" style="max-width: 80%; height: auto;" />
   </h1>
@@ -63,12 +64,9 @@
   </div>
 
   <!-- 加速度センサーモード -->
-  <div id="accelerationDisplay">
+  <div id="accelerationDisplay" style="display: none;">
+    <p id="stopMessage">画面タップでセンサ停止</p>
     <button id="requestPermission">加速度センサースタート</button>
-    <p id="modeDisplay">加速度センサー停止中</p>
-    <div id="countdown">3</div>
-    <button id="stopMeasurement" style="display: none;">画面タップでセンサ停止</button>
-    <button id="toggleMode">ルーレットに切り替え</button>
   </div>
 
   <script>
@@ -79,6 +77,7 @@
     let audio = new Audio('alert-sound.mp3');
     let intervalId;
 
+    // モード切り替え
     document.getElementById('toggleMode').addEventListener('click', () => {
       if (currentMode === 'slot') {
         currentMode = 'accelerometer';
@@ -91,6 +90,7 @@
       }
     });
 
+    // ルーレットスタート
     document.getElementById('spinButton').addEventListener('click', startSlotSpin);
     document.getElementById('changeModeButton').addEventListener('click', () => {
       currentSlotMode = (currentSlotMode + 1) % 2;
@@ -98,20 +98,19 @@
         `現在のモード: ${currentSlotMode === 0 ? '投げテーの祝福' : '避けテーの審判'}`;
     });
 
+    // 加速度センサー計測開始
     document.getElementById('requestPermission').addEventListener('click', async () => {
       if (typeof DeviceMotionEvent.requestPermission === 'function') {
         const permission = await DeviceMotionEvent.requestPermission();
         if (permission === 'granted') {
-          startCountdown();
+          startMeasurement();
         } else {
           alert('加速度センサーのアクセスが許可されていません。');
         }
       } else {
-        startCountdown();
+        startMeasurement();
       }
     });
-
-    document.getElementById('stopMeasurement').addEventListener('click', stopMeasurement);
 
     function startSlotSpin() {
       let spinDuration = 3000; // 3秒間ルーレットを回す
@@ -126,71 +125,53 @@
       setTimeout(() => clearInterval(spinInterval), spinDuration);
     }
 
-    function startCountdown() {
-      const countdownElement = document.getElementById('countdown');
-      let countdown = 3;
-      countdownElement.textContent = countdown;
-      countdownElement.style.display = 'block';
-
-      const countdownInterval = setInterval(() => {
-        countdown--;
-        if (countdown > 0) {
-          countdownElement.textContent = countdown;
-        } else {
-          clearInterval(countdownInterval);
-          countdownElement.style.display = 'none';
-          startMeasurement();
-        }
-      }, 1000);
-    }
-
     function startMeasurement() {
-  if (isMeasuring) return; // 重複して測定を開始しない
-  isMeasuring = true;
-  window.addEventListener('devicemotion', updateAcceleration);
+      if (isMeasuring) return; // 重複防止
+      isMeasuring = true;
 
-  // 加速度を定期的にチェック
-  intervalId = setInterval(() => {
-    const { x, y, z } = lastAcceleration;
-    const totalAccel = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+      window.addEventListener("devicemotion", updateAcceleration);
+      document.body.addEventListener("click", stopMeasurement);
 
-    // 音が途切れないように再生状態をチェック
-    if (totalAccel < 1.0) {
-      if (audio.paused) {
-        audio.loop = true; // 音をループ再生
-        audio.play();
-      }
-    } else {
-      if (!audio.paused) {
-        audio.pause();
-        audio.currentTime = 0; // 再生位置をリセット
-      }
+      intervalId = setInterval(() => {
+        const { x, y, z } = lastAcceleration;
+        const totalAccel = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+
+        if (totalAccel < 1.0) {
+          if (audio.paused) {
+            audio.loop = true;
+            audio.play();
+          }
+        } else {
+          if (!audio.paused) {
+            audio.pause();
+            audio.currentTime = 0;
+          }
+        }
+      }, 200);
+
+      document.getElementById("stopMessage").style.display = "block";
+      document.getElementById("requestPermission").style.display = "none";
     }
-  }, 200);
 
-  document.getElementById('stopMeasurement').style.display = 'inline-block';
-  document.getElementById('requestPermission').style.display = 'none';
-}
+    function stopMeasurement() {
+      clearInterval(intervalId);
+      window.removeEventListener("devicemotion", updateAcceleration);
+      document.body.removeEventListener("click", stopMeasurement);
+      audio.pause();
+      audio.currentTime = 0;
+      isMeasuring = false;
 
-function stopMeasurement() {
-  clearInterval(intervalId);
-  window.removeEventListener('devicemotion', updateAcceleration);
-  audio.pause();
-  audio.currentTime = 0; // 再生位置をリセット
-  isMeasuring = false;
+      document.getElementById("stopMessage").style.display = "none";
+      document.getElementById("requestPermission").style.display = "inline-block";
+    }
 
-  document.getElementById('stopMeasurement').style.display = 'none';
-  document.getElementById('requestPermission').style.display = 'inline-block';
-}
-
-function updateAcceleration(event) {
-  lastAcceleration = {
-    x: event.acceleration.x || 0,
-    y: event.acceleration.y || 0,
-    z: event.acceleration.z || 0,
-  };
-}
-
+    function updateAcceleration(event) {
+      lastAcceleration = {
+        x: event.acceleration.x || 0,
+        y: event.acceleration.y || 0,
+        z: event.acceleration.z || 0,
+      };
+    }
   </script>
 </body>
 </html>
