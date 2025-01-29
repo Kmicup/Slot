@@ -107,8 +107,8 @@
       let spinDuration = 1000; // 1秒間ルーレットを回す
       let spinInterval = setInterval(() => {
         const items = currentSlotMode === 0
-          ? ["ボール2個同時投げ", "投げる回数+1", "獲得点数×２", "獲得点数×３"]
-          : ["全員ケンケン", "避けテー一人行動不能", "避けテー鈴を鳴らす", "大声で早口言葉"];
+          ? ["大きいボール", "投げる回数+１", "獲得点数×２", "獲得点数×３"]
+          : ["全員ケンケン", "避けテー１人行動不能", "避けテー鈴を鳴らす", "禁止マス"];
         let index = Math.floor(Math.random() * items.length);
         document.getElementById('modeDisplay').textContent = `結果: ${items[index]}`;
       }, 100);
